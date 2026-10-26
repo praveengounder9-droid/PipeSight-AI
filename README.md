@@ -1,183 +1,124 @@
-# PipeSight AI — Agentic Sewer & Stormwater Pipe Inspection
+# PipeSight AI — AI-Based Sewer Pipe Defect Detection
 
-PipeSight AI is an autonomous CCTV sewer and stormwater pipe inspection platform. It combines **OpenCV 5**, a trained **YOLO26s** defect detection model (`best.pt`), **ByteTrack** multi-object tracking, and a deterministic **Agentic Vision controller** to assess image quality, identify pipeline defects, and generate diagnostic reports.
+PipeSight AI is a computer vision project focused on detecting defects in sewage pipes using a trained **YOLO26s model** and **OpenCV 5**. The project aims to analyze sewer inspection images and videos, identify potential defects, and present the results in an understandable format.
 
----
-
-## 1. Project Overview & Technologies
-
-PipeSight AI separates perception, defect tracking, and inspection reporting into a unified repository with decoupled backend and frontend services:
-
-- **Backend (`backend/`)**:
-  - **FastAPI** ASGI web framework for asynchronous video ingestion and status polling.
-  - **OpenCV 5** for sequential video frame decoding, CLAHE luminance enhancement, blur variance analysis, and HUD rendering.
-  - **Ultralytics YOLO26s** (`best.pt`) for detecting 5 defect categories: *Crack*, *Debris*, *Joint Fault*, *Root Intrusion*, and *Surface Damage*.
-  - **ByteTrack** for persistent multi-object tracking and candidate defect event deduplication across frames.
-  - **SQLite (WAL Mode)** for zero-cost, persistent job state and report storage surviving server restarts.
-  - **ReportLab** for formal engineering PDF inspection reports.
-- **Frontend (`frontend/`)**:
-  - **React 19 + TypeScript + Vite** inspection dashboard.
-  - High-contrast industrial UI with responsive tables, video playback HUD, evidence image lightbox, and agent execution trace.
-  - Download buttons for annotated MP4 video, formal PDF report, structured JSON telemetry, and complete ZIP package.
-- **Deployment (`deploy/`)**:
-  - Single AWS EC2 instance deployment templates using **Nginx** reverse proxy and **systemd**.
-  - Cost-controlled architecture targeting < $20 for demonstration periods on `t3a.medium` CPU instances.
+The current version focuses on the trained detection model and backend development. Video-based multi-object tracking, a complete user interface, and cloud deployment are planned extensions and should not be considered completed features unless implemented and tested.
 
 ---
 
-## 2. Repository Structure
+## 1. Project Overview
 
+Sewer pipes can develop defects such as cracks, debris accumulation, joint faults, root intrusion, and surface damage. Manually inspecting long CCTV recordings can be time-consuming.
+
+PipeSight AI explores how computer vision can assist this process by detecting potential pipe defects from images and, as the project develops, from video footage.
+
+### Technologies
+
+- **Python** — Core programming language.
+- **YOLO26s (Ultralytics)** — Trained object detection model.
+- **OpenCV 5** — Image and video processing.
+- **PyTorch** — Deep learning framework used by the model.
+- **FastAPI** — Planned or in-progress backend API for receiving images and videos.
+- **AWS** — Intended cloud deployment environment.
+
+## 2. Current Project Status
+
+- **Model training:** Completed for the current experiment.
+- **Defect detection:** Implemented in the trained model; actual performance depends on the input image and inspection conditions.
+- **Video processing:** Intended next step for processing video frames with OpenCV 5.
+- **ByteTrack:** Not yet implemented.
+- **Frontend dashboard:** Not yet confirmed as implemented.
+- **AWS deployment:** Not currently deployed; the previous EC2 instance has been terminated.
+- **Automated testing and PDF reports:** Not claimed as completed in this version.
+
+## 3. Model and Dataset
+
+The project uses a custom-trained YOLO26s model for sewer pipe defect detection.
+
+The target defect categories are:
+
+- Crack
+- Debris
+- Joint Fault
+- Root Intrusion
+- Surface Damage
+
+The training dataset contains 978 images. Data augmentation was applied to training images, while validation and test images were kept unaugmented.
+
+The trained model checkpoint is named `best.pt`.
+
+**Model limitation:** The current model has limited detection performance, with approximately 50 mAP reported during development. This figure should be accompanied by the exact metric, evaluation split, and evaluation results when those details are available. Further dataset improvements and model evaluation are needed before practical deployment.
+
+## 4. Planned Development
+
+The next development stages are:
+
+1. Build a FastAPI endpoint for image uploads and defect detection.
+2. Add video upload and sequential frame processing using OpenCV 5.
+3. Integrate ByteTrack to maintain defect track IDs across video frames.
+4. Save annotated images and video evidence.
+5. Present detection results and inspection summaries through a simple interface.
+6. Evaluate deployment on AWS when the backend is ready.
+
+These are development goals, not claims that every feature is already operational.
+
+## 5. Model Setup
+
+Place the trained model checkpoint at the following location if your backend is configured to load it from this path:
+
+```text
+backend/
+└── models/
+    └── best.pt
 ```
+
+The model weights are not included in the repository by default. Keep large model files outside Git when necessary, and follow the repository's model setup instructions.
+
+## 6. Development Environment
+
+The project was trained and tested in a Google Colab environment using a Tesla T4 GPU.
+
+Reported development environment:
+
+- Python 3.13.16
+- OpenCV 5.0.0
+- Ultralytics 8.4.187
+- PyTorch 2.11.0+cu130
+- CUDA-enabled Tesla T4 GPU
+
+These are the recorded training environment versions. They do not guarantee that every deployment environment will support the same configuration.
+
+## 7. Repository Structure
+
+The repository should reflect the files that actually exist in your uploaded project. A suggested structure for the model and backend is:
+
+```text
 PipeSight-AI/
 ├── backend/
 │   ├── app/
-│   │   ├── api/             # FastAPI REST endpoints
-│   │   ├── services/        # Video, Vision, Agent, Storage, DB services
-│   │   ├── utils/           # OpenCV 5 quality assessment, CLAHE, COOL adapter
-│   │   ├── config.py        # Settings and environment variables
-│   │   ├── schemas.py       # Pydantic data models
-│   │   └── main.py          # Application entrypoint
 │   ├── models/
-│   │   └── README.md        # Instructions to place and transfer best.pt
-│   ├── trackers/
-│   │   └── bytetrack.yaml   # ByteTrack tracker configuration
-│   ├── tests/               # Pytest automated test suite (30 tests)
-│   ├── scripts/             # CPU benchmark & verification scripts
-│   ├── storage/
-│   │   └── .gitkeep         # Local job storage directory
-│   ├── requirements.txt     # Pinned Python dependencies
-│   ├── Dockerfile           # Multi-stage production container
-│   ├── .dockerignore
-│   ├── .env.example         # Backend environment variables template
-│   └── README.md            # Detailed backend documentation
-├── frontend/
-│   ├── src/                 # React components, hooks, services, types
-│   ├── public/              # Static public assets
-│   ├── package.json         # Pinned npm dependencies
-│   ├── package-lock.json
-│   ├── .env.example         # Frontend environment template
-│   └── README.md            # Detailed frontend documentation
-├── deploy/
-│   ├── nginx.conf.example   # Nginx reverse proxy & static hosting config
-│   ├── pipesight.service.example  # Systemd service unit definition
-│   ├── deploy_ec2.sh        # Automated Ubuntu EC2 provisioning script
-│   └── README.md            # Step-by-step AWS EC2 deployment guide
+│   │   └── README.md
+│   └── requirements.txt
+├── dataset/
+│   └── README.md
+├── runs/
+│   └── README.md
 ├── .gitignore
-├── .gitattributes
 └── README.md
 ```
 
----
+Only include directories and files that exist in the actual repository. Avoid uploading private credentials, `.pem` keys, environment files containing secrets, or unnecessary large datasets.
 
-## 3. Prerequisites
+## 8. Future Scope
 
-- **Python**: Version 3.10 or 3.11.
-- **Node.js**: Version 18+ (tested on Node 20 & 24).
-- **npm**: Version 9+.
-- **Model Checkpoint**: Your trained YOLO26s checkpoint `best.pt` placed in `backend/models/best.pt`.
-- **System Libraries (Linux / Ubuntu)**: `ffmpeg`, `libgl1`, `libglib2.0-0`, `libgomp1`.
+- Improve detection accuracy using additional labeled training data.
+- Implement ByteTrack-based defect tracking across video frames.
+- Develop video-level defect summaries and evidence export.
+- Build a user-friendly inspection dashboard.
+- Explore AWS deployment for remote access and demonstration.
 
----
+## 9. Conclusion
 
-## 4. Model Placement
+PipeSight AI is a developing computer vision project for sewer pipe defect detection. It currently provides a foundation through a custom-trained YOLO26s model and an OpenCV 5 development environment. Future work will focus on reliable video processing, object tracking, improved model performance, and deployment.
 
-Place your trained `best.pt` weights file in the `backend/models/` directory:
-
-```bash
-# Path must be:
-backend/models/best.pt
-```
-
-> **Note:** Model weights (`*.pt`) are excluded from Git via `.gitignore`. See [`backend/models/README.md`](file:///d:/Users/kerat/Downloads/OPENCV_Sewer/PipeSight_AI/backend/models/README.md) for instructions on securely transferring `best.pt` to EC2 via `scp`.
-
----
-
-## 5. Local Setup & Running
-
-### Backend Startup
-
-1. Open a terminal in the `backend/` directory:
-   ```bash
-   cd backend
-   ```
-
-2. Create and activate a Python virtual environment:
-   ```bash
-   # Linux / macOS
-   python3 -m venv venv
-   source venv/bin/activate
-
-   # Windows PowerShell
-   python -m venv venv
-   .\venv\Scripts\Activate.ps1
-   ```
-
-3. Install pinned dependencies:
-   ```bash
-   pip install --upgrade pip
-   pip install -r requirements.txt
-   ```
-
-4. Configure environment:
-   ```bash
-   cp .env.example .env
-   ```
-
-5. Start the FastAPI backend:
-   ```bash
-   uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-   ```
-
-Backend will be available at `http://127.0.0.1:8000` (API documentation at `http://127.0.0.1:8000/docs`).
-
-### Frontend Startup
-
-1. Open a new terminal in the `frontend/` directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Configure environment:
-   ```bash
-   cp .env.example .env
-   ```
-   Ensure `VITE_API_BASE_URL=http://127.0.0.1:8000`.
-
-3. Install dependencies and start Vite dev server:
-   ```bash
-   npm install
-   npm run dev
-   ```
-
-Frontend will be available at `http://localhost:5173`.
-
----
-
-## 6. Running Tests
-
-Execute the automated backend test suite (30 unit & integration tests):
-
-```bash
-cd backend
-python -m pytest tests -v
-```
-
-Execute frontend production build check:
-
-```bash
-cd frontend
-npm run build
-```
-
----
-
-## 7. Deployment Instructions
-
-For complete, step-by-step instructions on deploying both frontend and backend to an **AWS EC2 Ubuntu instance** with Nginx, HTTPS, systemd, and strict cost controls (< $20), see:
-
-👉 [**AWS EC2 Production Deployment Guide (`deploy/README.md`)**](file:///d:/Users/kerat/Downloads/OPENCV_Sewer/PipeSight_AI/deploy/README.md)
-
-Additional component documentation:
-- [Backend Architecture & API Reference (`backend/README.md`)](file:///d:/Users/kerat/Downloads/OPENCV_Sewer/PipeSight_AI/backend/README.md)
-- [Frontend Inspection Dashboard (`frontend/README.md`)](file:///d:/Users/kerat/Downloads/OPENCV_Sewer/PipeSight_AI/frontend/README.md)
-- [Model Weights & Checkpoint Policy (`backend/models/README.md`)](file:///d:/Users/kerat/Downloads/OPENCV_Sewer/PipeSight_AI/backend/models/README.md)
+The project is intended as a prototype to explore AI-assisted sewer inspection, not as a validated replacement for professional engineering inspection.
