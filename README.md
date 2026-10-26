@@ -88,28 +88,7 @@ Reported development environment:
 
 These are the recorded training environment versions. They do not guarantee that every deployment environment will support the same configuration.
 
-## 7. Repository Structure
-
-The repository should reflect the files that actually exist in your uploaded project. A suggested structure for the model and backend is:
-
-```text
-PipeSight-AI/
-├── backend/
-│   ├── app/
-│   ├── models/
-│   │   └── README.md
-│   └── requirements.txt
-├── dataset/
-│   └── README.md
-├── runs/
-│   └── README.md
-├── .gitignore
-└── README.md
-```
-
-Only include directories and files that exist in the actual repository. Avoid uploading private credentials, `.pem` keys, environment files containing secrets, or unnecessary large datasets.
-
-## 8. Future Scope
+## 7. Future Scope
 
 - Improve detection accuracy using additional labeled training data.
 - Implement ByteTrack-based defect tracking across video frames.
@@ -117,7 +96,7 @@ Only include directories and files that exist in the actual repository. Avoid up
 - Build a user-friendly inspection dashboard.
 - Explore AWS deployment for remote access and demonstration.
 
-## 9. Conclusion
+## 8. Conclusion
 
 PipeSight AI is a developing computer vision project for sewer pipe defect detection. It currently provides a foundation through a custom-trained YOLO26s model and an OpenCV 5 development environment. Future work will focus on reliable video processing, object tracking, improved model performance, and deployment.
 
